@@ -1,6 +1,6 @@
 # zio-xml
 
-This library non-blocking parsers, writers and filters for handling streaming XML in the [zio](https://zio.dev/) Scala framework, specifically as `ZStream`. Parsing is done by wrapping the [Aalto](https://github.com/FasterXML/aalto-xml) XML parser. Writing uses the standard Java `XMLOutputFactory` mechanism (writing to a byte array which is known not to block).
+This library provides non-blocking parsers, writers and filters for handling streaming XML in the [zio](https://zio.dev/) Scala framework, specifically as `ZStream`. Parsing is done by wrapping the [Aalto](https://github.com/FasterXML/aalto-xml) XML parser. Writing uses the standard Java `XMLOutputFactory` mechanism (writing to a byte array which is known not to block).
 
 Currently, ZIO 2.0+ is targeted.
 
