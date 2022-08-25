@@ -9,7 +9,7 @@ import com.fasterxml.aalto.stax.InputFactoryImpl
 import com.fasterxml.aalto.util.IllegalCharHandler.ReplacingIllegalCharHandler
 import com.fasterxml.aalto.{AsyncByteArrayFeeder, AsyncXMLInputFactory, AsyncXMLStreamReader}
 import zio.stream.ZPipeline
-import zio.{Chunk, ZIO, ZManaged}
+import zio.{Chunk, ZIO}
 
 import XmlEvent._
 
@@ -20,7 +20,7 @@ object XmlParser {
     * @param ignoreInvalidChars Whether to skip over (instead of fail) any XML-invalid characters in the stream
     */
   def parser(ignoreInvalidChars: Boolean = false): ZPipeline[Any, XMLStreamException, Byte, XmlEvent] = {
-    val makeParser = ZManaged.succeed {
+    val makeParser = ZIO.succeed {
       val factory: AsyncXMLInputFactory = new InputFactoryImpl()
 
       factory.setProperty(XMLInputFactory.SUPPORT_DTD, false)

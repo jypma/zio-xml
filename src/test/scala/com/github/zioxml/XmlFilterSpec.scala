@@ -9,12 +9,12 @@ import Resources._
 import XmlAssertions._
 import XmlEvent._
 
-object XmlFilterSpec extends DefaultRunnableSpec {
+object XmlFilterSpec extends ZIOSpecDefault {
   val example = <xml><foo>1</foo><bar></bar><foo><tag/></foo><bar><foo/></bar></xml>
 
   override def spec = suite("XmlFilter")(
     suite("filterSubtree")(
-      testM("should select elements matching the path") {
+      test("should select elements matching the path") {
         for {
           res <- ZStream.fromIterable((example).toString.getBytes("UTF-8"))
             .via(XmlParser.parser())
@@ -33,7 +33,7 @@ object XmlFilterSpec extends DefaultRunnableSpec {
         }
       },
 
-      testM("should select invoice lines from an invoice") {
+      test("should select invoice lines from an invoice") {
         for {
           res <- ZStream.fromIterable(resource("/UBL-Invoice-2.0-Example.xml").getBytes("UTF-8"))
             .via(XmlParser.parser())
@@ -45,7 +45,7 @@ object XmlFilterSpec extends DefaultRunnableSpec {
         }
       },
 
-      testM("should yield scala nodes when combined with XmlWriter.collectNode") {
+      test("should yield scala nodes when combined with XmlWriter.collectNode") {
         for {
           res <- ZStream.fromIterable((example).toString.getBytes("UTF-8"))
             .via(XmlParser.parser())
@@ -58,11 +58,11 @@ object XmlFilterSpec extends DefaultRunnableSpec {
         }
       },
 
-      testM("should combine with XmlWriter.collectNode when reading one chunk") {
+      test("should combine with XmlWriter.collectNode when reading one chunk") {
         for {
           res <- ZStream.fromIterable(resource("/UBL-Invoice-2.0-Example.xml").toString.getBytes("UTF-8"))
             .via(XmlParser.parser())
-            .chunkN(10000000)
+            .rechunk(10000000)
             .via(XmlFilter.filterSubtree("Invoice" :: "InvoiceLine" :: Nil))
             .via(XmlWriter.collectNode())
             .runCollect
@@ -71,11 +71,11 @@ object XmlFilterSpec extends DefaultRunnableSpec {
         }
       },
 
-      testM("should combine with XmlWriter.collectNode on arbitrary chunk splits") {
+      test("should combine with XmlWriter.collectNode on arbitrary chunk splits") {
         for {
           res <- ZStream.fromIterable(resource("/UBL-Invoice-2.0-Example.xml").toString.getBytes("UTF-8"))
             .via(XmlParser.parser())
-            .chunkN(7)
+            .rechunk(7)
             .via(XmlFilter.filterSubtree("Invoice" :: "InvoiceLine" :: Nil))
             .via(XmlWriter.collectNode())
             .runCollect
@@ -84,11 +84,11 @@ object XmlFilterSpec extends DefaultRunnableSpec {
         }
       },
 
-      testM("should combine with XmlWriter.collectNode on a Coupa result with chunks of size 1") {
+      test("should combine with XmlWriter.collectNode on a Coupa result with chunks of size 1") {
         for {
           res <- ZStream.fromIterable(resource("/UBL-Invoice-2.0-Example.xml").toString.getBytes("UTF-8"))
             .via(XmlParser.parser())
-            .chunkN(1)
+            .rechunk(1)
             .via(XmlFilter.filterSubtree("Invoice" :: "InvoiceLine" :: Nil))
             .via(XmlWriter.collectNode())
             .runCollect
@@ -99,7 +99,7 @@ object XmlFilterSpec extends DefaultRunnableSpec {
     ),
 
     suite("filterTag")(
-      testM("should select elements that match the tag name, wherever they are in the tree") {
+      test("should select elements that match the tag name, wherever they are in the tree") {
         for {
           res <- ZStream.fromIterable((example).toString.getBytes("UTF-8"))
             .via(XmlParser.parser())
@@ -120,7 +120,7 @@ object XmlFilterSpec extends DefaultRunnableSpec {
         }
       },
 
-      testM("should select more examples") {
+      test("should select more examples") {
         for {
           res <- ZStream.fromIterable((example).toString.getBytes("UTF-8"))
             .via(XmlParser.parser())
@@ -138,7 +138,7 @@ object XmlFilterSpec extends DefaultRunnableSpec {
         }
       },
 
-      testM("should match the root") {
+      test("should match the root") {
         for {
           res <- ZStream.fromIterable((<root>1</root>).toString.getBytes("UTF-8"))
             .via(XmlParser.parser())
@@ -155,7 +155,7 @@ object XmlFilterSpec extends DefaultRunnableSpec {
     ),
 
     suite("filterTagNot")(
-      testM("should remove elements that match the tag name, wherever they are in the tree") {
+      test("should remove elements that match the tag name, wherever they are in the tree") {
         for {
           res <- ZStream.fromIterable((example).toString.getBytes("UTF-8"))
             .via(XmlParser.parser())
@@ -173,7 +173,7 @@ object XmlFilterSpec extends DefaultRunnableSpec {
         }
       },
 
-      testM("should remove more examples") {
+      test("should remove more examples") {
         for {
           res <- ZStream.fromIterable((example).toString.getBytes("UTF-8"))
             .via(XmlParser.parser())
@@ -194,7 +194,7 @@ object XmlFilterSpec extends DefaultRunnableSpec {
         }
       },
 
-      testM("should remove the root, even though that yields an empty stream") {
+      test("should remove the root, even though that yields an empty stream") {
         for {
           res <- ZStream.fromIterable((<root>1</root>).toString.getBytes("UTF-8"))
             .via(XmlParser.parser())

@@ -1,4 +1,4 @@
-val ZIOVersion = "2.0.0-RC1+171-08242aee-SNAPSHOT"
+val ZIOVersion = "2.0.1"
 
 scalaVersion := "2.13.7"
 
@@ -15,3 +15,37 @@ libraryDependencies := Seq(
 testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
 
 lazy val `zio-xml` = (project in file("."))
+
+ThisBuild / version := "0.1.0" +
+ThisBuild / versionScheme := Some("early-semver")
+ThisBuild / organization := "net.ypmania.zioxml"
+ThisBuild / organizationName := "Ypmania"
+ThisBuild / organizationHomepage := Some(url("https://github.com/jypma/"))
+
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/jypma/zio-xml"),
+    "scm:git@github.com:jypma/zio-xml.git"
+  )
+)
+ThisBuild / developers := List(
+  Developer(
+    id    = "jypma",
+    name  = "Jan Ypma",
+    email = "jan@ypmania.net",
+    url   = url("https://github.com/jypma/")
+  )
+)
+
+ThisBuild / description := "XML streaming directives for ZIO."
+ThisBuild / licenses := List("MIT" -> new URL("https://mit-license.org/"))
+ThisBuild / homepage := Some(url("https://github.com/jypma/zio-xml"))
+
+// Remove all additional repository other than Maven Central from POM
+ThisBuild / pomIncludeRepository := { _ => false }
+ThisBuild / publishTo := {
+  val nexus = "https://s01.oss.sonatype.org/"
+  if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
+  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+}
+ThisBuild / publishMavenStyle := true

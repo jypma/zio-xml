@@ -13,9 +13,11 @@ import scala.xml.parsing.NoBindingFactoryAdapter
 
 import org.w3c.dom.{DOMException, Element}
 import zio.stream.ZPipeline
-import zio.{Chunk, IO, Ref, ZIO, ZManaged}
+import zio.{Chunk, IO, Ref, ZIO}
 
 import XmlEvent._
+import zio.Scope
+import zio.ZLayer
 
 object XmlWriter {
   /** Collects each root-level tag (and all children) into a Scala XML Node instance */
@@ -28,7 +30,7 @@ object XmlWriter {
 
   /** Collects each root-level tag (and all children) into a DOM Element instance */
   def collectElement(): ZPipeline[Any, XMLStreamException, XmlEvent, Element] = {
-    writeTo(ZManaged.succeed {
+    writeTo(ZIO.succeed {
       val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
       val result = new DOMResult(doc)
       val output = XMLOutputFactory.newInstance().createXMLStreamWriter(result)
@@ -55,7 +57,7 @@ object XmlWriter {
 
   private def write(charset: Charset, startDoc: Boolean): ZPipeline[Any, XMLStreamException, XmlEvent, Byte] = {
     writeTo(
-      ZManaged.succeed {
+      ZIO.succeed {
         val bos = new ByteArrayOutputStream
         val output = XMLOutputFactory.newInstance().createXMLStreamWriter(bos, charset.name())
         if (startDoc) {
@@ -71,7 +73,7 @@ object XmlWriter {
   }
 
   private def writeTo[O,T]
-    (makeOutput: ZManaged[Any, Nothing, (T, XMLStreamWriter)])
+    (makeOutput: ZIO[Scope, Nothing, (T, XMLStreamWriter)])
     (emitAfterEvent: T => Chunk[O])
     (emitAfterRoot: T => Chunk[O]): ZPipeline[Any, XMLStreamException, XmlEvent, O] = {
 
@@ -113,38 +115,38 @@ object XmlWriter {
     }
 
     ZPipeline.fromPush {
-      for {
-        switch <- ZManaged.switchable[Any, Nothing, (T, XMLStreamWriter)]
-        initial <- switch(makeOutput).toManaged_
-        current <- Ref.make(initial).toManaged_
-        restart = switch(makeOutput).flatMap(current.set)
-        levelRef <- Ref.make(0).toManaged_
-      } yield {
-        var lastChunk: Chunk[XmlEvent] = Chunk.empty
-
-        def pushChunk(chunk: Chunk[XmlEvent], allowStartSplit: Boolean): IO[XMLStreamException, Chunk[O]] = for {
-          t <- current.get
-          (bos, output) = t
-          level <- levelRef.get
-          r <- ZIO.fromTry(Try(process(chunk, level, output, bos, allowStartSplit))).catchAll {
-            case x:XMLStreamException =>
-              ZIO.fail(x)
-            case x => ZIO.die(x)
-          }
-          (out, remainder, newLevel) = r
-          _ <- levelRef.set(newLevel)
-          rest <- if (!remainder.isEmpty) restart *> pushChunk(remainder, allowStartSplit = false) else ZIO.succeed(Chunk.empty)
+      ZIO.scoped {
+        val switchable = SwitchableScope.make(makeOutput)(_ => ZIO.unit)
+        for {
+          output <- switchable
+          levelRef <- Ref.make(0)
+          scope <- ZIO.scope
         } yield {
-          lastChunk = chunk
-          out ++ rest
-        }
+          var lastChunk: Chunk[XmlEvent] = Chunk.empty
 
-        var hadEvents = false
-        def push: Option[Chunk[XmlEvent]] => IO[XMLStreamException, Chunk[O]] = optChunk =>
+          def pushChunk(chunk: Chunk[XmlEvent], allowStartSplit: Boolean): ZIO[Scope, XMLStreamException, Chunk[O]] = for {
+            t <- output.get
+            (bos, out) = t
+            level <- levelRef.get
+            r <- ZIO.fromTry(Try(process(chunk, level, out, bos, allowStartSplit))).catchAll {
+              case x:XMLStreamException =>
+                ZIO.fail(x)
+              case x => ZIO.die(x)
+            }
+            (out, remainder, newLevel) = r
+            _ <- levelRef.set(newLevel)
+            rest <- if (!remainder.isEmpty) output.switch *> pushChunk(remainder, allowStartSplit = false) else ZIO.succeed(Chunk.empty)
+          } yield {
+            lastChunk = chunk
+            out ++ rest
+          }
+
+          var hadEvents = false
+          def push: Option[Chunk[XmlEvent]] => IO[XMLStreamException, Chunk[O]] = optChunk =>
           optChunk match {
             case None =>
-              current.get.map { case (bos, output) =>
-                output.flush()
+              output.get.map { case (bos, out) =>
+                out.flush()
                 val res = emitAfterEvent(bos) ++ emitAfterRoot(bos)
                 res
               }
@@ -154,13 +156,15 @@ object XmlWriter {
                 level <- levelRef.get
                 // We're allowed to start a new document at the very first event if we've
                 // seen any events (i.e. we are mid-stream).
-                res <- pushChunk(chunk, allowStartSplit = hadEvents || (level > 0))
+                res <- pushChunk(chunk, allowStartSplit = hadEvents || (level > 0)).provide(ZLayer.succeed(scope))
               } yield {
                 hadEvents = true
                 res
               }
           }
-        push
+
+          push
+        }
       }
     }
   }

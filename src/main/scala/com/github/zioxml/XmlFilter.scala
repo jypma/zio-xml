@@ -121,7 +121,7 @@ object XmlFilter {
   private def filter(f: Filter): ZPipeline[Any, Nothing, XmlEvent, XmlEvent] = {
     ZPipeline.fromPush {
       for {
-        state <- Ref.make(State()).toManaged_
+        state <- Ref.make(State())
       } yield {
         def push: Option[Chunk[XmlEvent]] => UIO[Chunk[XmlEvent]] = _ match {
           case None =>

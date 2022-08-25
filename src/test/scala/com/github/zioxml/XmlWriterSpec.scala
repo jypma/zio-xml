@@ -11,10 +11,10 @@ import XmlEvent._
 import XmlAssertions._
 import Resources._
 
-object XmlWriterSpec extends DefaultRunnableSpec {
+object XmlWriterSpec extends ZIOSpecDefault {
   override def spec = suite("XmlWriter")(
     suite("writeDocument")(
-      testM("should write XML events to bytes") {
+      test("should write XML events to bytes") {
         for {
           res <- ZStream(StartElement("foo", Attribute("hello", "world") :: Nil), EndElement("foo"))
           .via(XmlWriter.writeDocument())
@@ -24,7 +24,7 @@ object XmlWriterSpec extends DefaultRunnableSpec {
         }
       },
 
-      testM("should not get confused by starting characters") {
+      test("should not get confused by starting characters") {
         for {
           res <- ZStream(Characters("\n"), StartElement("foo", Attribute("hello", "world") :: Nil), EndElement("foo"))
           .via(XmlWriter.writeDocument())
@@ -33,7 +33,7 @@ object XmlWriterSpec extends DefaultRunnableSpec {
           assert(new String(res.toArray))(isXmlString(<foo hello="world"/>))
         }
       },
-      testM("should produce the same XML as XmlParser has read") {
+      test("should produce the same XML as XmlParser has read") {
         for {
           res <- ZStream.fromChunk(Chunk.fromArray(resource("/UBL-Invoice-2.0-Example.xml").getBytes(StandardCharsets.UTF_8)))
           .via(XmlParser.parser())
@@ -43,7 +43,7 @@ object XmlWriterSpec extends DefaultRunnableSpec {
           assert(new String(res.toArray))(isXmlString(resourceXml("/UBL-Invoice-2.0-Example.xml")))
         }
       },
-      testM("should produce an XML declaration even if StartDocument is missing") {
+      test("should produce an XML declaration even if StartDocument is missing") {
         for {
           res <- ZStream(StartElement("foo", Attribute("hello", "world") :: Nil), EndElement("foo"))
           .via(XmlWriter.writeDocument())
@@ -55,7 +55,7 @@ object XmlWriterSpec extends DefaultRunnableSpec {
     ),
 
     suite("writeFragment")(
-      testM("should not produce an XML declaration, even if StartDocument is present") {
+      test("should not produce an XML declaration, even if StartDocument is present") {
         for {
           res <- ZStream(StartElement("foo", Attribute("hello", "world") :: Nil), EndElement("foo"))
           .via(XmlWriter.writeFragment())
@@ -65,7 +65,7 @@ object XmlWriterSpec extends DefaultRunnableSpec {
         }
       },
 
-      testM("should output multiple root nodes") {
+      test("should output multiple root nodes") {
         for {
           res <- ZStream(StartElement("foo"), EndElement("foo"), StartElement("bar"), EndElement("bar"))
           .via(XmlWriter.writeFragment())
@@ -77,7 +77,7 @@ object XmlWriterSpec extends DefaultRunnableSpec {
     ),
 
     suite("collectElement")(
-      testM("should collect top-level elements and children into Element instances") {
+      test("should collect top-level elements and children into Element instances") {
         for {
           res <- ZStream(
             StartElement("foo", Attribute("hello", "world") :: Nil),
@@ -94,7 +94,7 @@ object XmlWriterSpec extends DefaultRunnableSpec {
     ),
 
     suite("collectNode")(
-      testM("should collect top-level elements and children into Node instances") {
+      test("should collect top-level elements and children into Node instances") {
         for {
           res <- ZStream(
             StartElement("foo", Attribute("hello", "world") :: Nil),

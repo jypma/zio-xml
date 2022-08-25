@@ -10,9 +10,9 @@ import zio.test._
 import Resources._
 import XmlEvent._
 
-object XmlParserSpec extends DefaultRunnableSpec {
+object XmlParserSpec extends ZIOSpecDefault {
   override def spec = suite("XmlParser")(
-    testM("should parse a typical XML file") {
+    test("should parse a typical XML file") {
       for {
         res <- ZStream.fromChunk(Chunk.fromArray(resource("/UBL-Invoice-2.0-Example.xml").getBytes(StandardCharsets.UTF_8)))
           .via(XmlParser.parser())
