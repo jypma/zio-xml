@@ -1,26 +1,22 @@
-/*package com.issworld.p2p.stream
+package com.github.zioxml
 
-import com.issworld.p2p.ZStreamOps.statefulTransducerOf
-
-import akka.stream.alpakka.xml.{Characters, EndElement, ParseEvent, StartDocument, StartElement}
 import zio.Chunk
-import zio.stream.ZTransducer
+import zio.stream.ZPipeline
+import XmlEvent._
 
-object XmlIndentFlow {
+object XmlIndenter {
 
   /** Indents a stream of XML parse events (removing any previous indentation first) */
-  def indent(amount: Int = 2): ZTransducer[Any, Nothing, ParseEvent, ParseEvent] =
-    XmlTrimFlow.trim >>> indentOnly(amount)
+  def indent(amount: Int = 2): ZPipeline[Any, Nothing, XmlEvent, XmlEvent] =
+    XmlTrimmer.trim >>> indentOnly(amount)
 
 /** Indents a stream of XML events. The incoming stream is assumed to have already been whitespace-trimmed by
   * XMLTrimFlow. Specifically, this means all Character events are assumed to have at least one non-whitespace
   * character (and, hence, will not be indented). */
-  def indentOnly(amount: Int = 2): ZTransducer[Any, Nothing, ParseEvent, ParseEvent] = {
+  def indentOnly(amount: Int = 2): ZPipeline[Any, Nothing, XmlEvent, XmlEvent] = {
     case class State(depth: Int = 0, started: Boolean = false, hadCharacters: Boolean = false) {
-      def process(event: ParseEvent): (State, Chunk[ParseEvent]) = {
+      def process(event: XmlEvent): (State, Chunk[XmlEvent]) = {
         event match {
-          case StartDocument =>
-            (copy(started = true), Chunk(StartDocument))
           case s:StartElement =>
             val prefix = if (!started || hadCharacters) Chunk.empty else {
               Chunk(Characters("\n" + (" " * (amount * depth))))
@@ -42,7 +38,6 @@ object XmlIndentFlow {
       }
     }
 
-    statefulTransducerOf[ParseEvent](State())(_ process _)(_ => Chunk.empty)
+    StatefulPipeline.of[XmlEvent](State())(_ process _)(_ => Chunk.empty)
   }
 }
- */

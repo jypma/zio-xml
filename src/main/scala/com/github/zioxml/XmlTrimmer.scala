@@ -1,16 +1,14 @@
-/*package com.issworld.p2p.stream
+package com.github.zioxml
 
-import com.issworld.p2p.ZStreamOps.statefulTransducerOf
-
-import akka.stream.alpakka.xml.{Characters, ParseEvent}
 import zio.Chunk
-import zio.stream.ZTransducer
+import zio.stream.ZPipeline
+import XmlEvent.Characters
 
 /** Removes Character events between two tag-events, if they're only whitespace. */
-object XmlTrimFlow {
-  val trim: ZTransducer[Any, Nothing, ParseEvent, ParseEvent] = {
+object XmlTrimmer {
+  val trim: ZPipeline[Any, Nothing, XmlEvent, XmlEvent] = {
     case class State(buffer: Option[String] = None, haveContent: Boolean = false) {
-      def process(event: ParseEvent): (State, Chunk[ParseEvent]) = {
+      def process(event: XmlEvent): (State, Chunk[XmlEvent]) = {
         event match {
           case c:Characters if haveContent =>
             (this, Chunk(c))
@@ -27,10 +25,9 @@ object XmlTrimFlow {
       def finish = Chunk.fromIterable(buffer.toSeq.map(Characters(_)))
     }
 
-    statefulTransducerOf[ParseEvent](State())(_ process _)(_.finish)
+    StatefulPipeline.of[XmlEvent](State())(_ process _)(_.finish)
   }
 
   private val ws = "[ \\t\\n]*".r
   private def isWhitespace(s: String) = ws.matches(s)
 }
- */

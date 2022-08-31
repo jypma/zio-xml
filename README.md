@@ -81,3 +81,14 @@ object XmlFilter {
   def filterTagNot(tagName: String): ZPipeline[Any, Nothing, XmlEvent, XmlEvent]
 }
 ```
+
+## Formatting
+
+When writing XML that should be easily readable by humans, it can be convenient to add indentation to make the nesting of XML elements easier to follow. A `ZPipeline` is provided that will re-indent an XML stream on the fly.
+
+```scala
+object XmlIndenter {
+  /** Indents a stream of XML parse events (removing any previous indentation first) */
+  def indent(amount: Int = 2): ZPipeline[Any, Nothing, XmlEvent, XmlEvent]
+}
+```
