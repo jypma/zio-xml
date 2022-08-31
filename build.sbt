@@ -16,7 +16,7 @@ testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
 
 lazy val `zio-xml` = (project in file("."))
 
-ThisBuild / version := "0.1.0"
+ThisBuild / version := "0.2.0"
 ThisBuild / versionScheme := Some("early-semver")
 ThisBuild / organization := "net.ypmania.zioxml"
 ThisBuild / organizationName := "Ypmania"
