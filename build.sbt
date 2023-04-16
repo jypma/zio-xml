@@ -1,13 +1,18 @@
-val ZIOVersion = "2.0.1"
+val ZIOVersion = "2.0.12"
 
-scalaVersion := "2.13.7"
+lazy val scala213 = "2.13.10"
+lazy val scala3 = "3.2.2"
+lazy val supportedScalaVersions = List(scala213, scala3)
+
+
+scalaVersion := scala213
 
 libraryDependencies := Seq(
   "org.scala-lang.modules" %% "scala-xml" % "2.0.1",
   "com.fasterxml" % "aalto-xml" % "1.2.2",
   "dev.zio" %% "zio" % ZIOVersion,
   "dev.zio" %% "zio-streams" % ZIOVersion,
-  "dev.zio" %% "zio-interop-reactivestreams" % "1.3.5",
+  "dev.zio" %% "zio-interop-reactivestreams" % "1.3.12",
   "dev.zio" %% "zio-test" % ZIOVersion % "test",
   "dev.zio" %% "zio-test-sbt" % ZIOVersion % "test",
 )
